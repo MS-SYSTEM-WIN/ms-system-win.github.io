@@ -40,8 +40,10 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config --local MS-SYSTEM-WIN.ms.system.win@gmail.com "action@github.com"
-          git config --local MS-SYSTEM-WIN.ms.system.win@gmail.com "GitHub Action"
+          git config --global user.email "ms.system.win@gmail.com"
+          git config --global user.name "MS-SYSTEM-WIN"
+          git config --local user.email "action@github.com"
+          git config --local user.email "GitHub Action"
           
           if [ -n "$(git status --porcelain)" ]; then
             git add public/data/
