@@ -32,16 +32,14 @@ jobs:
       - name: Fetch data (first time)
         run: python scripts/fetch_data.py
 
-      - name: Wait 30 seconds
-        run: sleep 30
+      - name: Wait 2 seconds
+        run: sleep 2
 
       - name: Fetch data (second time)
         run: python scripts/fetch_data.py
 
       - name: Commit and push changes
         run: |
-          git config --global user.email "ms.system.win@gmail.com"
-          git config --global user.name "MS-SYSTEM-WIN"
           git config --local user.email "ms.system.win@gmail.com"
           git config --local user.name "MS-SYSTEM-WIN"
           
