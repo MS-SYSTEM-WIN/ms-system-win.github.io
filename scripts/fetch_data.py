@@ -24,8 +24,12 @@ def fetch_api_data():
     """从 API 获取最新数据"""
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "zh-CN,zh;q=0.9",
+    "Referer": "https://auto.huawei.com/",
+}
+
         response = requests.get(API_URL, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
