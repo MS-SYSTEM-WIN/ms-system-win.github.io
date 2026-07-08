@@ -23,7 +23,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 def fetch_api_data():
     """从 API 获取最新数据"""
     try:
-        response = requests.get(API_URL, timeout=10)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        response = requests.get(API_URL, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         
@@ -37,11 +40,24 @@ def fetch_api_data():
         return None
 
 def parse_data(api_data):
-    """解析 API 数据"""
+    """解析 API 数据
+    
+    API 返回格式:
+    {
+        "pilot": {"value": "12620855892", "lastUpdateDate": "2026-07-08 21:50:18.000000"},
+        "mileage": {"value": "36858059240", "lastUpdateDate": "2026-07-08 21:50:18.000000"},
+        "avoid": {"value": "5880561", "lastUpdateDate": "2026-07-08 21:50:18.000000"}
+    }
+    """
     try:
-        pilot = int(api_data.get("pilot", {}).get("value") or api_data.get("pilot") or 0)
-        mileage = int(api_data.get("mileage", {}).get("value") or api_data.get("mileage") or 0)
-        avoid = int(api_data.get("avoid", {}).get("value") or api_data.get("avoid") or 0)
+        # 安全地提取数值，处理字符串类型
+        pilot_val = api_data.get("pilot", {}).get("value", "0")
+        mileage_val = api_data.get("mileage", {}).get("value", "0")
+        avoid_val = api_data.get("avoid", {}).get("value", "0")
+        
+        pilot = int(str(pilot_val).strip() or 0)
+        mileage = int(str(mileage_val).strip() or 0)
+        avoid = int(str(avoid_val).strip() or 0)
         
         return {
             "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -50,7 +66,7 @@ def parse_data(api_data):
             "avoid": avoid
         }
     except Exception as e:
-        print(f"解析数据失败: {e}")
+        print(f"解析数据失败: {e}, api_data: {api_data}")
         return None
 
 def load_history():
@@ -78,7 +94,7 @@ def save_current(data):
     try:
         with open(CURRENT_FILE, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"当前数据已保存: {data}")
+        print(f"当前数据已保存: pilot={data['pilot']}, mileage={data['mileage']}, avoid={data['avoid']}")
     except Exception as e:
         print(f"保存当前数据失败: {e}")
 
@@ -92,11 +108,15 @@ def main():
         print("无法获取 API 数据，退出")
         sys.exit(1)
     
+    print(f"API 返回数据: {api_data}")
+    
     # 解析数据
     parsed_data = parse_data(api_data)
     if not parsed_data:
         print("无法解析数据，退出")
         sys.exit(1)
+    
+    print(f"解析后的数据: {parsed_data}")
     
     # 保存当前数据
     save_current(parsed_data)
