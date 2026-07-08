@@ -3,7 +3,7 @@ name: Fetch Huawei ADS Data Every 30 Seconds
 on:
   schedule:
     # 每分钟运行两次（每 30 秒）
-    - cron: '*/1 * * * *'
+    - cron: '*/0.05 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -40,8 +40,8 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local MS-SYSTEM-WIN.ms.system.win@gmail.com "action@github.com"
+          git config --local MS-SYSTEM-WIN.ms.system.win@gmail.com "GitHub Action"
           
           if [ -n "$(git status --porcelain)" ]; then
             git add public/data/
