@@ -45,7 +45,7 @@ export default function Home() {
       }
 
       // 加载历史数据
-      const historyResponse = await fetch('/data/history.json?t=' + Date.now());
+      const historyResponse = await fetch('/public/data/history.json?t=' + Date.now());
       if (historyResponse.ok) {
         const history: CurrentData[] = await historyResponse.json();
         
