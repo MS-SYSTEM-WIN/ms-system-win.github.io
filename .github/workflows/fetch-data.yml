@@ -42,8 +42,8 @@ jobs:
         run: |
           git config --global user.email "ms.system.win@gmail.com"
           git config --global user.name "MS-SYSTEM-WIN"
-          git config --local user.email "action@github.com"
-          git config --local user.email "GitHub Action"
+          git config --local user.email "ms.system.win@gmail.com"
+          git config --local user.name "MS-SYSTEM-WIN"
           
           if [ -n "$(git status --porcelain)" ]; then
             git add public/data/
