@@ -1,0 +1,52 @@
+name: Fetch Huawei ADS Data Every 30 Seconds
+
+on:
+  schedule:
+    # 每分钟运行两次（每 30 秒）
+    - cron: '*/1 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Fetch data (first time)
+        run: python scripts/fetch_data.py
+
+      - name: Wait 30 seconds
+        run: sleep 30
+
+      - name: Fetch data (second time)
+        run: python scripts/fetch_data.py
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            git add public/data/
+            git commit -m "chore: update huawei ads data - $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          else
+            echo "No changes to commit"
+          fi
