@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card } from '@/components/ui/card';
 
@@ -7,7 +7,7 @@ interface DataPoint {
   pilot: number;
   mileage: number;
   avoid: number;
-  time?: string; // 用于图表显示
+  time?: string;
 }
 
 interface CurrentData {
@@ -25,14 +25,21 @@ export default function Home() {
     avoid: 0,
   });
   const [lastUpdateTime, setLastUpdateTime] = useState<string>('');
-  const [dataSource, setDataSource] = useState<'github' | 'local'>('github');
   const [isLoading, setIsLoading] = useState(true);
 
-  // 从 GitHub 仓库加载数据
+  // 从 GitHub 原始文件 URL 加载数据
   const loadDataFromGitHub = async () => {
     try {
+      const owner = 'MS-SYSTEM-WIN';
+      const repo = 'ms-system-win.github.io';
+      const branch = 'main';
+
+      // 使用 GitHub 原始文件 URL
+      const currentUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/public/data/current.json?t=${Date.now()}`;
+      const historyUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/public/data/history.json?t=${Date.now()}`;
+
       // 加载当前数据
-      const currentResponse = await fetch('/data/current.json');
+      const currentResponse = await fetch(currentUrl);
       if (currentResponse.ok) {
         const current: CurrentData = await currentResponse.json();
         setCurrentValues({
@@ -41,25 +48,23 @@ export default function Home() {
           avoid: current.avoid,
         });
         setLastUpdateTime(new Date(current.timestamp).toLocaleTimeString('zh-CN'));
-        setDataSource('github');
       }
 
       // 加载历史数据
-      const historyResponse = await fetch('/data/history.json');
+      const historyResponse = await fetch(historyUrl);
       if (historyResponse.ok) {
         const history: CurrentData[] = await historyResponse.json();
-        
+
         // 转换数据格式用于图表显示
         const chartData: DataPoint[] = history.map((item, index) => ({
           ...item,
           time: `${Math.floor(index / 2)}:${String((index % 2) * 30).padStart(2, '0')}`,
         }));
-        
+
         setData(chartData);
       }
     } catch (error) {
       console.error('加载 GitHub 数据失败:', error);
-      setDataSource('local');
       loadDataFromLocalStorage();
     } finally {
       setIsLoading(false);
@@ -73,7 +78,7 @@ export default function Home() {
       if (saved) {
         setData(JSON.parse(saved));
       }
-      
+
       const currentSaved = localStorage.getItem('huawei-ads-current');
       if (currentSaved) {
         setCurrentValues(JSON.parse(currentSaved));
@@ -114,144 +119,141 @@ export default function Home() {
     }
   }, [currentValues]);
 
-  const handleClearData = () => {
-    if (confirm('确定要清空所有本地存储的数据吗？')) {
-      localStorage.removeItem('huawei-ads-history');
-      localStorage.removeItem('huawei-ads-current');
-      window.location.reload();
-    }
+  const clearCache = () => {
+    localStorage.removeItem('huawei-ads-history');
+    localStorage.removeItem('huawei-ads-current');
+    setData([]);
+    setCurrentValues({ pilot: 0, mileage: 0, avoid: 0 });
+    alert('本地缓存已清空');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
-      {/* 背景网格 */}
-      <div className="fixed inset-0 opacity-5 pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255,255,255,.05) 25%, rgba(255,255,255,.05) 26%, transparent 27%, transparent 74%, rgba(255,255,255,.05) 75%, rgba(255,255,255,.05) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255,255,255,.05) 25%, rgba(255,255,255,.05) 26%, transparent 27%, transparent 74%, rgba(255,255,255,.05) 75%, rgba(255,255,255,.05) 76%, transparent 77%, transparent)',
-        backgroundSize: '50px 50px',
-      }} />
-
-      {/* 顶部导航 */}
-      <header className="relative z-10 border-b border-blue-900/30 bg-slate-950/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">华为乾崑智驾</h1>
-              <p className="text-blue-300 text-sm mt-1">实时数据监控仪表板</p>
-            </div>
-            <div className="text-right">
-              <p className="text-gray-400 text-sm">最后更新: {lastUpdateTime || '--:--:--'}</p>
-              <p className="text-blue-300 text-sm mt-1">
-                数据源: {dataSource === 'github' ? 'GitHub Actions' : '本地存储'}
-                {isLoading && ' (加载中...)'}
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* 标题 */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">华为乾崑智驾</h1>
+          <p className="text-slate-400 text-lg">实时数据监控仪表板</p>
         </div>
-      </header>
 
-      {/* 主内容区 */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8">
-        {/* 实时数值卡片 */}
+        {/* 顶部信息栏 */}
+        <div className="flex justify-between items-center mb-6 text-sm text-slate-400">
+          <div>最后更新: <span className="text-cyan-400 font-mono">{lastUpdateTime || '--:--:--'}</span></div>
+          <div>数据源: <span className="text-cyan-400">GitHub Actions</span></div>
+        </div>
+
+        {/* 数据卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[
-            { label: '累计辅助驾驶里程', value: currentValues.pilot, unit: '公里', color: 'from-cyan-500 to-blue-500' },
-            { label: '累计行驶总里程', value: currentValues.mileage, unit: '公里', color: 'from-orange-500 to-red-500' },
-            { label: '累计主动避险次数', value: currentValues.avoid, unit: '次', color: 'from-purple-500 to-pink-500' },
-          ].map((item, idx) => (
-            <Card key={idx} className="bg-slate-900/50 border-blue-900/30 backdrop-blur-sm overflow-hidden">
-              <div className={`h-1 bg-gradient-to-r ${item.color}`} />
-              <div className="p-6">
-                <p className="text-gray-400 text-sm font-medium mb-2">{item.label}</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-bold text-white font-mono">
-                    {item.value.toLocaleString('zh-CN')}
-                  </p>
-                  <span className="text-gray-500 text-sm">{item.unit}</span>
-                </div>
+          {/* 辅助驾驶里程 */}
+          <Card className="bg-slate-800 border-slate-700 p-6 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500 group-hover:w-full transition-all duration-300 opacity-10"></div>
+            <div className="relative z-10">
+              <div className="text-slate-400 text-sm mb-2">累计辅助驾驶里程</div>
+              <div className="flex items-baseline gap-2">
+                <div className="text-4xl font-bold text-cyan-400">{currentValues.pilot.toLocaleString()}</div>
+                <div className="text-slate-400">公里</div>
               </div>
-            </Card>
-          ))}
+            </div>
+          </Card>
+
+          {/* 行驶总里程 */}
+          <Card className="bg-slate-800 border-slate-700 p-6 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 group-hover:w-full transition-all duration-300 opacity-10"></div>
+            <div className="relative z-10">
+              <div className="text-slate-400 text-sm mb-2">累计行驶总里程</div>
+              <div className="flex items-baseline gap-2">
+                <div className="text-4xl font-bold text-orange-400">{currentValues.mileage.toLocaleString()}</div>
+                <div className="text-slate-400">公里</div>
+              </div>
+            </div>
+          </Card>
+
+          {/* 主动避险次数 */}
+          <Card className="bg-slate-800 border-slate-700 p-6 relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-1 h-full bg-purple-500 group-hover:w-full transition-all duration-300 opacity-10"></div>
+            <div className="relative z-10">
+              <div className="text-slate-400 text-sm mb-2">累计主动避险次数</div>
+              <div className="flex items-baseline gap-2">
+                <div className="text-4xl font-bold text-purple-400">{currentValues.avoid.toLocaleString()}</div>
+                <div className="text-slate-400">次</div>
+              </div>
+            </div>
+          </Card>
         </div>
 
-        {/* 图表卡片 */}
-        <Card className="bg-slate-900/50 border-blue-900/30 backdrop-blur-sm p-6">
+        {/* 图表 */}
+        <Card className="bg-slate-800 border-slate-700 p-6 mb-8">
           <h2 className="text-xl font-bold text-white mb-6">实时数据趋势</h2>
           {data.length > 0 ? (
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis 
-                  dataKey="time" 
-                  stroke="rgba(255,255,255,0.5)" 
-                  tick={{ fontSize: 12 }}
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis
+                  dataKey="time"
+                  stroke="#94a3b8"
+                  style={{ fontSize: '12px' }}
                 />
-                <YAxis 
-                  stroke="rgba(255,255,255,0.5)" 
-                  tick={{ fontSize: 12 }}
+                <YAxis
+                  stroke="#94a3b8"
+                  style={{ fontSize: '12px' }}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #475569',
                     borderRadius: '8px',
-                    color: '#fff',
                   }}
-                  formatter={(value: number) => value.toLocaleString('zh-CN')}
-                  labelFormatter={(label) => `时间: ${label}`}
+                  labelStyle={{ color: '#e2e8f0' }}
                 />
-                <Legend 
-                  wrapperStyle={{ color: 'rgba(255,255,255,0.7)' }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="pilot" 
-                  stroke="#00D4AA" 
+                <Line
+                  type="monotone"
+                  dataKey="pilot"
+                  stroke="#06b6d4"
                   dot={false}
                   strokeWidth={2}
                   name="辅助驾驶里程"
-                  isAnimationActive={false}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="mileage" 
-                  stroke="#FF9500" 
+                <Line
+                  type="monotone"
+                  dataKey="mileage"
+                  stroke="#f97316"
                   dot={false}
                   strokeWidth={2}
-                  name="总行驶里程"
-                  isAnimationActive={false}
+                  name="行驶总里程"
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="avoid" 
-                  stroke="#E91E63" 
+                <Line
+                  type="monotone"
+                  dataKey="avoid"
+                  stroke="#d946ef"
                   dot={false}
                   strokeWidth={2}
-                  name="避险次数"
-                  isAnimationActive={false}
+                  name="主动避险次数"
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-96 flex items-center justify-center text-gray-500">
-              <p>{isLoading ? '加载数据中...' : '暂无数据'}</p>
+            <div className="h-96 flex items-center justify-center text-slate-500">
+              {isLoading ? '加载中...' : '暂无数据'}
             </div>
           )}
         </Card>
 
-        {/* 底部说明 */}
-        <div className="mt-8 text-center text-gray-500 text-sm">
+        {/* 底部信息 */}
+        <div className="text-center text-slate-500 text-sm mb-6">
           <p>数据每 30 秒自动更新一次 (GitHub Actions) • 最多保留 2880 个数据点（24 小时）</p>
-          <p className="mt-2 text-xs text-gray-600">
-            数据来源: 华为乾崑智驾 API • GitHub Actions 自动爬取 • 历史数据保存在仓库中
-          </p>
-          <button 
-            onClick={handleClearData}
-            className="mt-4 px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-300 rounded-md text-xs transition-colors"
+          <p className="mt-2">数据来源: 华为乾崑智驾 API • GitHub Actions 自动爬取 • 历史数据保存在仓库中</p>
+        </div>
+
+        {/* 清空缓存按钮 */}
+        <div className="flex justify-center">
+          <button
+            onClick={clearCache}
+            className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors"
           >
             清空本地缓存
           </button>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
