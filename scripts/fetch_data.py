@@ -131,9 +131,7 @@ def main():
     # 添加新数据到历史
     history.append(parsed_data)
     
-    # 只保留最近 2880 条记录（24 小时，每 30 秒一条）
-    if len(history) > 2880:
-        history = history[-2880:]
+
     
     # 保存历史数据
     save_history(history)
