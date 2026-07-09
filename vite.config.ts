@@ -203,7 +203,45 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+/**
+ * 复制数据文件到构建输出目录
+ * 确保 public/data/ 中的数据文件被包含在 dist/ 中
+ */
+function vitePluginCopyDataFiles(): Plugin {
+  return {
+    name: "copy-data-files",
+    writeBundle() {
+      const srcDir = path.join(PROJECT_ROOT, "public", "data");
+      const distDir = path.join(PROJECT_ROOT, "dist", "data");
+
+      // 确保目标目录存在
+      if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir, { recursive: true });
+      }
+
+      // 复制数据文件
+      if (fs.existsSync(srcDir)) {
+        const files = fs.readdirSync(srcDir);
+        for (const file of files) {
+          const srcFile = path.join(srcDir, file);
+          const distFile = path.join(distDir, file);
+          fs.copyFileSync(srcFile, distFile);
+          console.log(`✅ 复制数据文件: ${file}`);
+        }
+      }
+    },
+  };
+}
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  vitePluginStorageProxy(),
+  vitePluginCopyDataFiles(), // ✅ 新增：复制数据文件
+];
 
 export default defineConfig({
   plugins,
