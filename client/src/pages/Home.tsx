@@ -32,7 +32,7 @@ export default function Home() {
   const loadDataFromGitHub = async () => {
     try {
       // 加载当前数据
-      const currentResponse = await fetch('/public/data/current.json');
+      const currentResponse = await fetch('/data/current.json');
       if (currentResponse.ok) {
         const current: CurrentData = await currentResponse.json();
         setCurrentValues({
@@ -45,7 +45,7 @@ export default function Home() {
       }
 
       // 加载历史数据
-      const historyResponse = await fetch('/public/data/history.json');
+      const historyResponse = await fetch('/data/history.json');
       if (historyResponse.ok) {
         const history: CurrentData[] = await historyResponse.json();
         
