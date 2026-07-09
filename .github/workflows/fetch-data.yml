@@ -3,7 +3,7 @@ name: Fetch Huawei ADS Data Every 30 Seconds
 on:
   schedule:
     # 每分钟运行两次（每 30 秒）
-    - cron: '*/0.1 * * * *'
+    - cron: '*/1 * * * *'
   workflow_dispatch:
 
 permissions:
